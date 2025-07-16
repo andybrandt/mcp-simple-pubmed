@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/andybrandt-mcp-simple-pubmed-badge.jpg)](https://mseep.ai/app/andybrandt-mcp-simple-pubmed)
+
 # MCP Simple PubMed
 [![smithery badge](https://smithery.ai/badge/mcp-simple-pubmed)](https://smithery.ai/server/mcp-simple-pubmed)
 
