@@ -1,6 +1,7 @@
 [![MseeP Badge](https://mseep.net/pr/andybrandt-mcp-simple-pubmed-badge.jpg)](https://mseep.ai/app/andybrandt-mcp-simple-pubmed)
 
 # MCP Simple PubMed
+[![Trust Score](https://archestra.ai/mcp-catalog/api/badge/quality/andybrandt/mcp-simple-pubmed)](https://archestra.ai/mcp-catalog/andybrandt__mcp-simple-pubmed)
 [![smithery badge](https://smithery.ai/badge/mcp-simple-pubmed)](https://smithery.ai/server/mcp-simple-pubmed)
 
 An MCP server that provides access to PubMed articles through the Entrez API.
