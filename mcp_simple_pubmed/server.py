@@ -99,7 +99,10 @@ async def search_pubmed(query: str, max_results: int = 10) -> str:
                 
             # Add PubMed URLs
             article["pubmed_url"] = f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/"
-            article["pubmed_fulltext_url"] = f"https://www.ncbi.nlm.nih.gov/pmc/articles/{pmid}/"
+
+            # Add PMC URL only if PMCID is available
+            if "pmcid" in article:
+                article["pmc_url"] = f"https://www.ncbi.nlm.nih.gov/pmc/articles/{article['pmcid']}/"
             
             articles_with_resources.append(article)
 

@@ -106,9 +106,11 @@ class PubMedClient:
                 article = {
                     "pmid": pmid,
                     "title": self._get_xml_text(article_root, './/ArticleTitle') or "No title",
-                    "abstract": self._get_xml_text(article_root, './/Abstract/AbstractText') or "No abstract available",
+                    "abstract": self._get_full_abstract(article_root) or "No abstract available",
                     "journal": self._get_xml_text(article_root, './/Journal/Title') or "",
-                    "authors": []
+                    "authors": [],
+                    "keywords": [],
+                    "mesh_terms": []
                 }
                 
                 # Get authors
@@ -131,13 +133,51 @@ class PubMedClient:
                         "day": day
                     }
                     
-                # Get DOI if available
-                article_id_list = article_root.findall('.//ArticleId')
-                for article_id in article_id_list:
-                    if article_id.get('IdType') == 'doi':
-                        article["doi"] = article_id.text
-                        break
-                        
+                # Get DOI and PMCID if available
+                # Important: Only get ArticleIds from the main ArticleIdList, not from references
+                pubmed_data = article_root.find('.//PubmedData')
+                if pubmed_data is not None:
+                    # Use direct child path to avoid getting IDs from ReferenceList
+                    article_id_list_elem = pubmed_data.find('ArticleIdList')
+                    if article_id_list_elem is not None:
+                        for article_id in article_id_list_elem:
+                            id_type = article_id.get('IdType')
+                            if id_type == 'doi':
+                                article["doi"] = article_id.text
+                            elif id_type == 'pmc':
+                                article["pmcid"] = article_id.text
+
+                # Get Keywords
+                keyword_list = article_root.findall('.//Keyword')
+                for keyword in keyword_list:
+                    if keyword.text:
+                        # Clean up keyword text (remove trailing periods, etc.)
+                        clean_keyword = keyword.text.strip().rstrip('.')
+                        if clean_keyword:
+                            article["keywords"].append(clean_keyword)
+
+                # Get MeSH terms
+                mesh_heading_list = article_root.findall('.//MeshHeading')
+                for mesh_heading in mesh_heading_list:
+                    descriptor = mesh_heading.find('DescriptorName')
+                    if descriptor is not None and descriptor.text:
+                        mesh_term = {
+                            "descriptor": descriptor.text,
+                            "ui": descriptor.get('UI', ''),
+                            "qualifiers": []
+                        }
+
+                        # Get qualifiers if present
+                        qualifiers = mesh_heading.findall('QualifierName')
+                        for qualifier in qualifiers:
+                            if qualifier.text:
+                                mesh_term["qualifiers"].append({
+                                    "name": qualifier.text,
+                                    "ui": qualifier.get('UI', '')
+                                })
+
+                        article["mesh_terms"].append(mesh_term)
+
                 return article
                 
             return None
@@ -152,3 +192,32 @@ class PubMedClient:
             return None
         found = elem.find(xpath)
         return found.text if found is not None else None
+
+    def _get_full_abstract(self, article_root: Optional[ET.Element]) -> Optional[str]:
+        """Get complete abstract text, handling structured abstracts with multiple sections."""
+        if article_root is None:
+            return None
+
+        abstract_texts = article_root.findall('.//Abstract/AbstractText')
+
+        if not abstract_texts:
+            return None
+
+        # If there's only one AbstractText element, return it directly
+        if len(abstract_texts) == 1:
+            return abstract_texts[0].text
+
+        # For structured abstracts with multiple sections
+        abstract_parts = []
+        for text_elem in abstract_texts:
+            label = text_elem.get('Label')
+            text = text_elem.text or ""
+
+            if label:
+                # Format as "LABEL: text"
+                abstract_parts.append(f"{label}: {text}")
+            else:
+                abstract_parts.append(text)
+
+        # Join all parts with double newline for readability
+        return "\n\n".join(abstract_parts)
