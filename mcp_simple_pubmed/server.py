@@ -4,9 +4,10 @@ MCP server implementation for PubMed integration using FastMCP SDK.
 import os
 import json
 import logging
-from typing import Optional, Dict, Any, Tuple
+from typing import Optional, Dict, Any, Tuple, List
 
 from fastmcp import FastMCP
+from mcp.types import TextContent
 from mcp_simple_pubmed.pubmed_client import PubMedClient
 from mcp_simple_pubmed.fulltext_client import FullTextClient
 
@@ -203,6 +204,91 @@ async def read_pubmed_resource(pmid: str, resource_type: str) -> str:
     except Exception as e:
         logger.exception(f"Error reading resource pmid={pmid}, type={resource_type}")
         raise ValueError(f"Error reading resource: {str(e)}")
+
+
+# =============================================================================
+# Prompts - Templates to help users construct effective PubMed searches
+# =============================================================================
+
+@app.prompt()
+def systematic_review_search(topic: str, years: str = "5") -> List[TextContent]:
+    """Generate a systematic review search strategy for a medical topic."""
+    return [
+        TextContent(
+            type="text",
+            text=f"""Help me create a comprehensive PubMed search strategy for a systematic review on: "{topic}"
+
+Please build a search query that includes:
+1. MeSH terms (Medical Subject Headings) for the main concept
+2. Free-text synonyms and related terms
+3. Boolean operators (AND, OR) to combine terms
+4. Date filter for the last {years} years using [PDAT]
+
+Use PubMed field tags like:
+- [MeSH Terms] for controlled vocabulary
+- [Title/Abstract] for free text
+- [PDAT] for publication date
+
+Example format: (term1[MeSH Terms] OR term2[Title/Abstract]) AND ("2020"[PDAT] : "2025"[PDAT])
+
+After constructing the query, use the search_pubmed tool to execute it."""
+        )
+    ]
+
+
+@app.prompt()
+def pico_search(
+    population: str,
+    intervention: str,
+    comparison: str = "",
+    outcome: str = ""
+) -> List[TextContent]:
+    """Build a PICO-based search query for clinical questions."""
+    pico_parts = [f"Population: {population}", f"Intervention: {intervention}"]
+    if comparison:
+        pico_parts.append(f"Comparison: {comparison}")
+    if outcome:
+        pico_parts.append(f"Outcome: {outcome}")
+
+    pico_list = "\n".join("- " + p for p in pico_parts)
+
+    return [
+        TextContent(
+            type="text",
+            text=f"""Help me search PubMed for this clinical question using the PICO framework:
+
+{pico_list}
+
+Please:
+1. Identify MeSH terms and synonyms for each PICO element
+2. Combine terms within each element using OR
+3. Combine PICO elements using AND
+4. Consider adding study type filters (e.g., Clinical Trial, Meta-Analysis)
+
+Build the query and use search_pubmed to find relevant articles."""
+        )
+    ]
+
+
+@app.prompt()
+def author_search(author_name: str, affiliation: str = "") -> List[TextContent]:
+    """Find all publications by a specific author."""
+    affiliation_note = f" affiliated with {affiliation}" if affiliation else ""
+
+    return [
+        TextContent(
+            type="text",
+            text=f"""Help me find all PubMed publications by author: {author_name}{affiliation_note}
+
+Please:
+1. Format the author name correctly for PubMed (LastName FirstInitial, e.g., "Smith J")
+2. Use the [Author] field tag
+3. If affiliation is provided, combine with [Affiliation] field
+4. Consider name variations (full name vs initials)
+
+Build the query and use search_pubmed to retrieve the publications."""
+        )
+    ]
 
 
 def main():

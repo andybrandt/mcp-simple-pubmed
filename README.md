@@ -10,9 +10,21 @@ An MCP server that provides access to PubMed articles through the Entrez API.
 
 ## Features
 
-- Search PubMed database using keywords
-- Access article abstracts
-- Download full text when available (for open access articles available directly on PubMed) 
+### Tools
+- **Search PubMed** - Search the database using keywords, MeSH terms, author names, date ranges, and Boolean operators
+- **Get Full Text** - Download full text when available (for open access articles in PubMed Central)
+- **Access Abstracts** - Retrieve article abstracts and metadata via resource URIs
+
+### Prompts (New in v0.1.14)
+MCP Prompts help you construct effective PubMed searches:
+
+- **Systematic Review Search** - Generate comprehensive search strategies with MeSH terms, synonyms, and date filters for systematic reviews
+- **PICO Search** - Build clinical question searches using the PICO framework (Population, Intervention, Comparison, Outcome)
+- **Author Search** - Find all publications by a specific author with proper name formatting
+
+These prompts guide the AI to build optimized PubMed queries, making it easier to conduct thorough literature searches.
+
+### Notes
 
 Please note that the tool returns XML-ized version of full text. It is however more useful for AIs than a "human readable" text would have been as it gives them additional information about document's structure. At least, this is what Claude 3.5 Sonnet said he prefers. 
 

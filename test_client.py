@@ -110,6 +110,65 @@ async def main():
             else:
                 print(result_text)
 
+            # --- Test 7: List Prompts ---
+            print("\n\n--- Running Test 7: List Prompts ---")
+            prompts = await client.list_prompts()
+            print("--- Available Prompts ---")
+            for prompt in prompts:
+                print(f"- {prompt.name}: {prompt.description}")
+                if prompt.arguments:
+                    for arg in prompt.arguments:
+                        required_marker = " (required)" if arg.required else ""
+                        print(f"    - {arg.name}{required_marker}: {arg.description}")
+
+            # --- Test 8: Get a Prompt (systematic_review_search) ---
+            print("\n\n--- Running Test 8: Get Prompt (systematic_review_search) ---")
+            prompt_result = await client.get_prompt(
+                "systematic_review_search",
+                arguments={"topic": "diabetes prevention", "years": "3"}
+            )
+            print("--- Prompt Result ---")
+            for message in prompt_result.messages:
+                # Handle different content types
+                content = message.content
+                if hasattr(content, 'text'):
+                    print(f"Content: {content.text[:300]}...")
+                else:
+                    print(f"Content: {str(content)[:300]}...")
+
+            # --- Test 9: Get a Prompt (pico_search) ---
+            print("\n\n--- Running Test 9: Get Prompt (pico_search) ---")
+            pico_result = await client.get_prompt(
+                "pico_search",
+                arguments={
+                    "population": "adults with type 2 diabetes",
+                    "intervention": "metformin",
+                    "comparison": "placebo",
+                    "outcome": "HbA1c reduction"
+                }
+            )
+            print("--- PICO Prompt Result ---")
+            for message in pico_result.messages:
+                content = message.content
+                if hasattr(content, 'text'):
+                    print(f"Content: {content.text[:300]}...")
+                else:
+                    print(f"Content: {str(content)[:300]}...")
+
+            # --- Test 10: Get a Prompt (author_search) ---
+            print("\n\n--- Running Test 10: Get Prompt (author_search) ---")
+            author_result = await client.get_prompt(
+                "author_search",
+                arguments={"author_name": "Fauci Anthony", "affiliation": "NIH"}
+            )
+            print("--- Author Search Prompt Result ---")
+            for message in author_result.messages:
+                content = message.content
+                if hasattr(content, 'text'):
+                    print(f"Content: {content.text[:300]}...")
+                else:
+                    print(f"Content: {str(content)[:300]}...")
+
         except Exception as e:
             print(f"An error occurred: {e}")
             
