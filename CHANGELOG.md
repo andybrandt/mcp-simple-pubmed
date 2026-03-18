@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.15] - 2026-03-18
+
+### Fixed
+- **get_full_text returning wrong paper** ([#11](https://github.com/andybrandt/mcp-simple-pubmed/issues/11)) - When a requested article was not in PMC, elink returned citing papers (`pubmed_pmc_refs`) instead of the article itself (`pubmed_pmc`). The code grabbed the first result regardless of link type, silently returning a completely different paper's full text. Fixed with XPath filter and PMID verification safety net.
+
+### Added
+- `PmidMismatchError` exception for explicit handling when fetched PMC article doesn't match the requested PMID
+- Informative error messages to AI clients when full text retrieval fails due to PMID mismatch
+- Unit test suite (`tests/test_fulltext_client.py`) with 8 tests covering `check_full_text_availability` and `get_full_text`
+- Regression test in `test_client.py` for issue #11 (PMID 36738762)
+- Build script (`build.sh`) for pip package and Docker image builds
+- pytest and pytest-asyncio as dev dependencies
+
+### Changed
+- Dockerfile Python version from 3.10 to 3.13 to match `requires-python` in pyproject.toml
+- License format in pyproject.toml from classifier to SPDX expression (`license = "MIT"`)
+
 ## [0.1.14] - 2025-12-17
 
 ### Added
