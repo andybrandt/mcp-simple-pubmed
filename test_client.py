@@ -76,9 +76,33 @@ async def main():
             else:
                 print(result_text)
 
-            # --- Test 5: Read abstract resource from the first search result ---
+            # --- Test 5: Regression test for issue #11 ---
+            # PMID 36738762 (Feagan 2023, Lancet Gastroenterol Hepatol) is paywalled
+            # and NOT in PMC. Before the fix, get_paper_fulltext would silently return
+            # the full text of a completely different paper (a citing paper from PMC).
+            # After the fix, it should return a "not available" message.
+            print("\n\n--- Running Test 5: Regression test for issue #11 (wrong paper bug) ---")
+            issue11_pmid = "36738762"
+            print(f"Calling 'get_paper_fulltext' for PMID: {issue11_pmid} (not in PMC)...")
+            issue11_result = await client.call_tool(
+                "get_paper_fulltext",
+                {"pmid": issue11_pmid}
+            )
+            result_text = issue11_result.data
+            print(f"\n--- Issue #11 Result (length: {len(result_text)} chars) ---")
+            print(result_text)
+
+            # Verify: should be a short "not available" message, not a huge paper
+            if len(result_text) > 5000:
+                print("\n*** FAIL: Response is too long — likely returning wrong paper! ***")
+            elif "not available" in result_text.lower() or "does not match" in result_text.lower():
+                print("\n*** PASS: Correctly reports article is not available in PMC ***")
+            else:
+                print("\n*** WARN: Unexpected response format ***")
+
+            # --- Test 6: Read abstract resource from the first search result ---
             if parsed_search_result:
-                print("\n\n--- Running Test 5: Read abstract resource ---")
+                print("\n\n--- Running Test 6: Read abstract resource ---")
                 first_article = parsed_search_result[0]
                 abstract_uri = first_article.get("abstract_uri")
                 
@@ -95,8 +119,8 @@ async def main():
             else:
                 print("Search returned no results, skipping resource read.")
 
-            # --- Test 6: Read full_text resource for a specific, known article ---
-            print("\n\n--- Running Test 6: Read full_text resource ---")
+            # --- Test 7: Read full_text resource for a specific, known article ---
+            print("\n\n--- Running Test 7: Read full_text resource ---")
             specific_pmid_for_resource = "24677277"
             full_text_uri = f"pubmed://{specific_pmid_for_resource}/full_text"
             print(f"Reading resource at URI: {full_text_uri}...")
@@ -110,8 +134,8 @@ async def main():
             else:
                 print(result_text)
 
-            # --- Test 7: List Prompts ---
-            print("\n\n--- Running Test 7: List Prompts ---")
+            # --- Test 8: List Prompts ---
+            print("\n\n--- Running Test 8: List Prompts ---")
             prompts = await client.list_prompts()
             print("--- Available Prompts ---")
             for prompt in prompts:
@@ -121,8 +145,8 @@ async def main():
                         required_marker = " (required)" if arg.required else ""
                         print(f"    - {arg.name}{required_marker}: {arg.description}")
 
-            # --- Test 8: Get a Prompt (systematic_review_search) ---
-            print("\n\n--- Running Test 8: Get Prompt (systematic_review_search) ---")
+            # --- Test 9: Get a Prompt (systematic_review_search) ---
+            print("\n\n--- Running Test 9: Get Prompt (systematic_review_search) ---")
             prompt_result = await client.get_prompt(
                 "systematic_review_search",
                 arguments={"topic": "diabetes prevention", "years": "3"}
@@ -136,8 +160,8 @@ async def main():
                 else:
                     print(f"Content: {str(content)[:300]}...")
 
-            # --- Test 9: Get a Prompt (pico_search) ---
-            print("\n\n--- Running Test 9: Get Prompt (pico_search) ---")
+            # --- Test 10: Get a Prompt (pico_search) ---
+            print("\n\n--- Running Test 10: Get Prompt (pico_search) ---")
             pico_result = await client.get_prompt(
                 "pico_search",
                 arguments={
@@ -155,8 +179,8 @@ async def main():
                 else:
                     print(f"Content: {str(content)[:300]}...")
 
-            # --- Test 10: Get a Prompt (author_search) ---
-            print("\n\n--- Running Test 10: Get Prompt (author_search) ---")
+            # --- Test 11: Get a Prompt (author_search) ---
+            print("\n\n--- Running Test 11: Get Prompt (author_search) ---")
             author_result = await client.get_prompt(
                 "author_search",
                 arguments={"author_name": "Fauci Anthony", "affiliation": "NIH"}
