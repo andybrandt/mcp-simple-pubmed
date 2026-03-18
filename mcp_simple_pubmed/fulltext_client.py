@@ -13,6 +13,28 @@ import xml.etree.ElementTree as ET
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("pubmed-fulltext")
 
+
+class PmidMismatchError(Exception):
+    """Raised when the PMC article's PMID does not match the requested PMID.
+
+    This indicates that elink returned a PMC article that is not the same
+    as the requested PubMed article — typically a citing paper rather than
+    the article itself.
+
+    Attributes:
+        requested_pmid: The PMID that was originally requested.
+        found_pmid: The PMID found in the fetched PMC XML.
+    """
+
+    def __init__(self, requested_pmid: str, found_pmid: str):
+        self.requested_pmid = requested_pmid
+        self.found_pmid = found_pmid
+        super().__init__(
+            f"PMC article PMID {found_pmid} does not match "
+            f"requested PMID {requested_pmid}"
+        )
+
+
 class FullTextClient:
     """Client for retrieving full text content from PubMed Central."""
 
@@ -56,7 +78,8 @@ class FullTextClient:
             
             # Parse XML to get PMC ID
             root = ET.fromstring(xml_content)
-            linksetdb = root.find(".//LinkSetDb")
+            # Filter for direct PMC link only — not pubmed_pmc_refs (citing papers)
+            linksetdb = root.find(".//LinkSetDb[LinkName='pubmed_pmc']")
             if linksetdb is None:
                 logger.info(f"No PMC ID found for PMID {pmid}")
                 return False, None
@@ -125,8 +148,21 @@ class FullTextClient:
                 # Add small delay to respect API rate limits
                 time.sleep(0.5)
                 
+            # Verify the fetched article matches the requested PMID
+            root = ET.fromstring(content)
+            article_pmid_elem = root.find(
+                ".//article-meta/article-id[@pub-id-type='pmid']"
+            )
+            if article_pmid_elem is not None and article_pmid_elem.text != pmid:
+                raise PmidMismatchError(
+                    requested_pmid=pmid,
+                    found_pmid=article_pmid_elem.text
+                )
+
             return content
-            
+
+        except PmidMismatchError:
+            raise  # Must propagate to server layer
         except Exception as e:
             logger.exception(f"Error getting full text for PMID {pmid}: {str(e)}")
             return None

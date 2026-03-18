@@ -9,7 +9,7 @@ from typing import Optional, Dict, Any, Tuple, List
 from fastmcp import FastMCP
 from mcp.types import TextContent
 from mcp_simple_pubmed.pubmed_client import PubMedClient
-from mcp_simple_pubmed.fulltext_client import FullTextClient
+from mcp_simple_pubmed.fulltext_client import FullTextClient, PmidMismatchError
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -161,7 +161,26 @@ async def get_paper_fulltext(pmid: str) -> str:
             
         logger.info(f"Full text not available in PMC for PMID {pmid}, provided alternative locations")
         return message
-        
+
+    except PmidMismatchError as e:
+        logger.warning(
+            f"PMID mismatch for {pmid}: requested {e.requested_pmid}, "
+            f"found {e.found_pmid} in PMC"
+        )
+        # Fetch article details for alternative links
+        article = await pubmed_client.get_article_details(pmid)
+
+        message = (
+            f"Full text retrieval failed: the article found in PMC does not match "
+            f"the requested article (PMID {e.requested_pmid}). This typically means "
+            f"the article is not available as open access in PubMed Central.\n\n"
+            f"The article may be available at these locations:\n"
+            f"- PubMed page: https://pubmed.ncbi.nlm.nih.gov/{pmid}/\n"
+        )
+        if article and "doi" in article:
+            message += f"- Publisher's site (via DOI): https://doi.org/{article['doi']}\n"
+        return message
+
     except Exception as e:
         logger.exception(f"Error in get_paper_fulltext")
         raise ValueError(f"Error retrieving full text: {str(e)}")
@@ -203,6 +222,24 @@ async def read_pubmed_resource(pmid: str, resource_type: str) -> str:
 
         else:
             raise ValueError(f"Invalid resource type requested: {resource_type}")
+
+    except PmidMismatchError as e:
+        logger.warning(
+            f"PMID mismatch for resource {pmid}: requested {e.requested_pmid}, "
+            f"found {e.found_pmid} in PMC"
+        )
+        article = await pubmed_client.get_article_details(pmid)
+
+        message = (
+            f"Full text retrieval failed: the article found in PMC does not match "
+            f"the requested article (PMID {e.requested_pmid}). This typically means "
+            f"the article is not available as open access in PubMed Central.\n\n"
+            f"The article may be available at these locations:\n"
+            f"- PubMed page: https://pubmed.ncbi.nlm.nih.gov/{pmid}/\n"
+        )
+        if article and "doi" in article:
+            message += f"- Publisher's site (via DOI): https://doi.org/{article['doi']}\n"
+        return message
 
     except Exception as e:
         logger.exception(f"Error reading resource pmid={pmid}, type={resource_type}")
