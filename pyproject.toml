@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mcp-simple-pubmed"
-version = "0.1.15"
+version = "0.1.16"
 description = "An MCP server that provides access to PubMed articles through Entrez API."
 readme = "README.md"
 authors = [
     {name = "Andy Brandt", email = "andy@codesprinters.com"}
 ]
-requires-python = ">=3.13"
+requires-python = ">=3.10"
 license = "MIT"
 classifiers = [
     "Programming Language :: Python :: 3",

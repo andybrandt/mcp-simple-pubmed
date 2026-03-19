@@ -144,7 +144,7 @@ async def get_paper_fulltext(pmid: str) -> str:
         available, pmc_id = await fulltext_client.check_full_text_availability(pmid)
         
         if available:
-            full_text = await fulltext_client.get_full_text(pmid)
+            full_text = await fulltext_client.get_full_text(pmid, pmc_id=pmc_id)
             if full_text:
                 logger.info(f"Successfully retrieved full text from PMC for PMID {pmid}")
                 return full_text
@@ -207,7 +207,7 @@ async def read_pubmed_resource(pmid: str, resource_type: str) -> str:
         elif resource_type == "full_text":
             available, pmc_id = await fulltext_client.check_full_text_availability(pmid)
             if available:
-                full_text = await fulltext_client.get_full_text(pmid)
+                full_text = await fulltext_client.get_full_text(pmid, pmc_id=pmc_id)
                 if full_text:
                     return full_text
             

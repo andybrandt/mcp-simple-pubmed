@@ -216,6 +216,43 @@ class TestGetFullText:
         assert result is not None
         assert "Full text content here" in result
 
+    async def test_with_pmc_id_skips_elink(self, client):
+        """When pmc_id is provided, should skip elink call entirely (issue #12)."""
+        mock_efetch_handle = MagicMock()
+        mock_efetch_handle.read.return_value = PMC_XML_MATCHING_PMID
+        mock_efetch_handle.__bool__ = lambda self: True
+
+        with patch("mcp_simple_pubmed.fulltext_client.Entrez.elink") as mock_elink, \
+             patch("mcp_simple_pubmed.fulltext_client.Entrez.efetch",
+                    return_value=mock_efetch_handle):
+            result = await client.get_full_text("12345678", pmc_id="9999999")
+
+        # elink should NOT have been called since pmc_id was provided
+        mock_elink.assert_not_called()
+        assert result is not None
+        assert "Full text content here" in result
+
+    async def test_without_pmc_id_calls_elink(self, client):
+        """When pmc_id is not provided, should call elink (backward compat, issue #12)."""
+        mock_elink_handle = MagicMock()
+        mock_elink_handle.read.return_value = ELINK_XML_PMC_DIRECT
+        mock_elink_handle.__bool__ = lambda self: True
+
+        mock_efetch_handle = MagicMock()
+        mock_efetch_handle.read.return_value = PMC_XML_MATCHING_PMID
+        mock_efetch_handle.__bool__ = lambda self: True
+
+        with patch("mcp_simple_pubmed.fulltext_client.Entrez.elink",
+                    return_value=mock_elink_handle) as mock_elink, \
+             patch("mcp_simple_pubmed.fulltext_client.Entrez.efetch",
+                    return_value=mock_efetch_handle):
+            result = await client.get_full_text("12345678")
+
+        # elink SHOULD have been called since no pmc_id was provided
+        mock_elink.assert_called_once()
+        assert result is not None
+        assert "Full text content here" in result
+
     async def test_pmid_mismatch_raises_error(self, client):
         """When PMC XML contains different PMID, should raise PmidMismatchError."""
         mock_elink_handle = MagicMock()

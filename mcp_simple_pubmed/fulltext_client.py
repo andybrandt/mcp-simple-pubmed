@@ -97,23 +97,26 @@ class FullTextClient:
             logger.exception(f"Error checking PMC availability for PMID {pmid}: {str(e)}")
             return False, None
 
-    async def get_full_text(self, pmid: str) -> Optional[str]:
+    async def get_full_text(self, pmid: str, pmc_id: Optional[str] = None) -> Optional[str]:
         """Get full text of the article if available through PMC.
-        
+
         Handles truncated responses by making additional requests.
-        
+
         Args:
             pmid: PubMed ID of the article
-            
+            pmc_id: Optional PMC ID if already known (skips elink lookup).
+                If not provided, check_full_text_availability is called internally.
+
         Returns:
             Full text content if available, None otherwise
         """
         try:
-            # First check availability and get PMC ID
-            available, pmc_id = await self.check_full_text_availability(pmid)
-            if not available or pmc_id is None:
-                logger.info(f"Full text not available in PMC for PMID {pmid}")
-                return None
+            # Use provided PMC ID or look it up via elink
+            if pmc_id is None:
+                available, pmc_id = await self.check_full_text_availability(pmid)
+                if not available or pmc_id is None:
+                    logger.info(f"Full text not available in PMC for PMID {pmid}")
+                    return None
 
             logger.info(f"Fetching full text for PMC ID {pmc_id}")
             content = ""
