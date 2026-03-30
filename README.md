@@ -8,6 +8,10 @@ An MCP server that provides access to PubMed articles through the Entrez API.
 
 <a href="https://glama.ai/mcp/servers/5wlfb8i6bj"><img width="380" height="200" src="https://glama.ai/mcp/servers/5wlfb8i6bj/badge" alt="mcp-simple-pubmed MCP server" /></a>
 
+## Hosted deployment
+
+A hosted deployment is available on [Fronteir AI](https://fronteir.ai/mcp/andybrandt-mcp-simple-pubmed).
+
 ## Features
 
 ### Tools
