@@ -2,7 +2,7 @@
 
 # MCP Simple PubMed
 [![Trust Score](https://archestra.ai/mcp-catalog/api/badge/quality/andybrandt/mcp-simple-pubmed)](https://archestra.ai/mcp-catalog/andybrandt__mcp-simple-pubmed)
-[![smithery badge](https://smithery.ai/badge/mcp-simple-pubmed)](https://smithery.ai/server/mcp-simple-pubmed)
+[![LightNow capabilities](https://lightnow.ai/badge/io.github.andybrandt/mcp-simple-pubmed)](https://lightnow.ai/servers/io.github.andybrandt/mcp-simple-pubmed)
 
 An MCP server that provides access to PubMed articles through the Entrez API.
 
