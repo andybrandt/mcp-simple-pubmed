@@ -150,19 +150,21 @@ class PubMedClient:
                 # Get Keywords
                 keyword_list = article_root.findall('.//Keyword')
                 for keyword in keyword_list:
-                    if keyword.text:
-                        # Clean up keyword text (remove trailing periods, etc.)
-                        clean_keyword = keyword.text.strip().rstrip('.')
-                        if clean_keyword:
-                            article["keywords"].append(clean_keyword)
+                    # Clean up keyword text (remove trailing periods, etc.)
+                    clean_keyword = self._element_text(keyword).strip().rstrip('.')
+                    if clean_keyword:
+                        article["keywords"].append(clean_keyword)
 
                 # Get MeSH terms
                 mesh_heading_list = article_root.findall('.//MeshHeading')
                 for mesh_heading in mesh_heading_list:
                     descriptor = mesh_heading.find('DescriptorName')
-                    if descriptor is not None and descriptor.text:
+                    descriptor_name = ""
+                    if descriptor is not None:
+                        descriptor_name = self._element_text(descriptor)
+                    if descriptor_name:
                         mesh_term = {
-                            "descriptor": descriptor.text,
+                            "descriptor": descriptor_name,
                             "ui": descriptor.get('UI', ''),
                             "qualifiers": []
                         }
@@ -170,9 +172,10 @@ class PubMedClient:
                         # Get qualifiers if present
                         qualifiers = mesh_heading.findall('QualifierName')
                         for qualifier in qualifiers:
-                            if qualifier.text:
+                            qualifier_name = self._element_text(qualifier)
+                            if qualifier_name:
                                 mesh_term["qualifiers"].append({
-                                    "name": qualifier.text,
+                                    "name": qualifier_name,
                                     "ui": qualifier.get('UI', '')
                                 })
 
@@ -186,12 +189,40 @@ class PubMedClient:
             logger.exception(f"Error getting article details for PMID {pmid}: {str(e)}")
             return None
             
+    @staticmethod
+    def _element_text(elem: ET.Element) -> str:
+        """Get all text of an XML element, including text inside child elements.
+
+        PubMed puts inline markup (<i>, <b>, <sup>, <sub>) inside titles,
+        abstracts and keywords. `elem.text` stops at the first child element,
+        so it would cut "Study of <i>E. coli</i> growth" down to "Study of ".
+
+        Args:
+            elem: XML element to read
+
+        Returns:
+            Concatenated text of the element and all its descendants
+            (empty string if there is none)
+        """
+        return ''.join(elem.itertext())
+
     def _get_xml_text(self, elem: Optional[ET.Element], xpath: str) -> Optional[str]:
-        """Helper method to safely get text from XML element."""
+        """Helper method to safely get text from XML element.
+
+        Args:
+            elem: Parent XML element to search in (may be None)
+            xpath: Path of the child element to read
+
+        Returns:
+            Full text of the found element, or None if the element is
+            missing or has no text
+        """
         if elem is None:
             return None
         found = elem.find(xpath)
-        return (''.join(found.itertext()) or None) if found is not None else None
+        if found is None:
+            return None
+        return self._element_text(found) or None
 
     def _get_full_abstract(self, article_root: Optional[ET.Element]) -> Optional[str]:
         """Get complete abstract text, handling structured abstracts with multiple sections."""
@@ -205,13 +236,13 @@ class PubMedClient:
 
         # If there's only one AbstractText element, return it directly
         if len(abstract_texts) == 1:
-            return ''.join(abstract_texts[0].itertext()) or None
+            return self._element_text(abstract_texts[0]) or None
 
         # For structured abstracts with multiple sections
         abstract_parts = []
         for text_elem in abstract_texts:
             label = text_elem.get('Label')
-            text = ''.join(text_elem.itertext())
+            text = self._element_text(text_elem)
 
             if label:
                 # Format as "LABEL: text"

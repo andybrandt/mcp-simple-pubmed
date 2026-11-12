@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.17] - 2026-11-12
+
+### Fixed
+- **Truncated titles, abstracts and keywords** ([#17](https://github.com/andybrandt/mcp-simple-pubmed/pull/17), thanks to @dajiaohuang) - PubMed XML contains inline markup such as `<i>`, `<b>`, `<sup>` and `<sub>` (for example italicised species names). Text was read with ElementTree's `element.text`, which stops at the first inline element, so `"Study of <i>E. coli</i> growth"` became `"Study of "`. An abstract starting with an inline element was reported as missing, and so was a keyword. In a sample of 40 recent records, 31 titles and 49 of 75 abstract sections were affected. All free-text fields (title, journal, abstract, keywords, MeSH terms) now use `itertext()` to collect the full text.
+
+### Added
+- Unit tests for inline-markup handling (`tests/test_mixed_content.py`), including an end-to-end `get_article_details` test with a mocked efetch response
+
+### Changed
+- README: replaced broken Smithery badge ([#16](https://github.com/andybrandt/mcp-simple-pubmed/pull/16))
+
+## [0.1.16] - 2026-03-19
+
+### Fixed
+- Redundant second elink call on every full-text request: the server now passes the already-known PMC ID to `get_full_text` ([#12](https://github.com/andybrandt/mcp-simple-pubmed/issues/12))
+- Restored compatibility with Python 3.10 and later (`requires-python = ">=3.10"`, Dockerfile base image `python:3.10-slim`)
+
 ## [0.1.15] - 2026-03-18
 
 ### Fixed
