@@ -191,7 +191,7 @@ class PubMedClient:
         if elem is None:
             return None
         found = elem.find(xpath)
-        return found.text if found is not None else None
+        return (''.join(found.itertext()) or None) if found is not None else None
 
     def _get_full_abstract(self, article_root: Optional[ET.Element]) -> Optional[str]:
         """Get complete abstract text, handling structured abstracts with multiple sections."""
@@ -205,13 +205,13 @@ class PubMedClient:
 
         # If there's only one AbstractText element, return it directly
         if len(abstract_texts) == 1:
-            return abstract_texts[0].text
+            return ''.join(abstract_texts[0].itertext()) or None
 
         # For structured abstracts with multiple sections
         abstract_parts = []
         for text_elem in abstract_texts:
             label = text_elem.get('Label')
-            text = text_elem.text or ""
+            text = ''.join(text_elem.itertext())
 
             if label:
                 # Format as "LABEL: text"
